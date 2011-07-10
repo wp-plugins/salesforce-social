@@ -2,9 +2,9 @@
 Contributors: pete_ryan
 Donate link: http://cornersoftware.co.uk/
 Tags: Salesforce, CRM, Web-to-lead, REST, API, Integration
-Requires at least: 3.0.0
-Tested up to: 3.0.0
-Stable tag: 1.0
+Requires at least: 2.8
+Tested up to: 3.0
+Stable tag: 1.0.1
 
 Salesforce Integration Suite. Web-to-Lead Form & REST API
 
@@ -15,7 +15,7 @@ Generate a raw HTML form using your Salesforce CRM account and paste it into the
 2. REST API to allow complex integrations with Wordpress/Buddypress.
 Allows user admin from an external application.
 
-http://www.youtube.com/watch?v=k4y2XzNYEAQ
+Please see the [Salesforce Social Tutorial / Demo video](http://www.youtube.com/watch?v=k4y2XzNYEAQ).
 
 == Installation ==
 
