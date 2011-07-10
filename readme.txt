@@ -10,7 +10,7 @@ Salesforce Integration Suite. Web-to-Lead Form & REST API
 
 == Description ==
 1. Web-to-Lead Form for Salesforce CRM. Send Leads to Salesforce CRM.
-Generate a raw HTML form using your Salesforce CRM account and paste it into the Admin Panel of this plugin. Styling, form validation and anti-spam captcha can be added and the form and it can be included anywhere in your Wordpress/Buddypress site by using the short code [webtolead]. The form is fully customisable and even deals with with custom fields in the Salesforce Lead object.
+Generate a raw HTML form using your Salesforce CRM account and paste it into the Admin Panel of this plugin. Styling, form validation and anti-spam captcha can be added. The form can be included anywhere in your Wordpress/Buddypress site by using the short code [webtolead]. The form is fully customisable and even deals with with custom fields in the Salesforce Lead object.
 
 2. REST API to allow complex integrations with Wordpress/Buddypress.
 Allows user admin from an external application.
