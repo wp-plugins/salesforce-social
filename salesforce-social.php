@@ -363,25 +363,34 @@ if (!class_exists('SFSoc')) {
             $verfixneeded = false;
 
             if (version_compare($wp_version,SFSoc::MIN_WP_VER,"<")) {
-                $ver_exit_msg[] = 'Salesforce Social requires Wordpress version ';
+                $ver_exit_msg[] = 'Salesforce Social suggests Wordpress version ';
                 $ver_exit_msg[] = SFSoc::MIN_WP_VER;
                 $ver_exit_msg[] = ' or newer. Please update!';
                 $verfixneeded = true;
             }
 
-            if (!defined('BP_VERSION') || version_compare(BP_VERSION, SFSoc::MIN_BP_VER,'<')) {
+            if (defined('BP_VERSION')) {
+                if (version_compare(BP_VERSION, SFSoc::MIN_BP_VER,'<')) {
                     $ver_exit_msg[] = '<br>';
-                    $ver_exit_msg[] = __('Salesforce Social requires Buddypress version ', SFSoc::LOCALIZATION_DOMAIN);
+                    $ver_exit_msg[] = __('Salesforce Social suggests Buddypress version ', SFSoc::LOCALIZATION_DOMAIN);
                     $ver_exit_msg[] = SFSoc::MIN_BP_VER;
                     $ver_exit_msg[] = __(' or newer. Please update!', SFSoc::LOCALIZATION_DOMAIN);
                     $verfixneeded = true;
+                }
             }
+            /*
             if ($verfixneeded) {
 		exit (implode('',$ver_exit_msg));
             }
+             *
+             */
 
 ?>
                 <div class="wrap">
+                <?php if($verfixneeded==TRUE) : ?>
+                    <h4><?php echo(implode('',$ver_exit_msg)) ?></h4>
+                <?php endif; ?>
+
                 <h2>Salesforce Social</h2>
                 <h3><?php _e('Salesforce / Wordpress / Buddypress Integration', SFSoc::LOCALIZATION_DOMAIN); ?></h3>
                 <p><?php _e('Salesforce Membership Management Systems from Corner Software Ltd', SFSoc::LOCALIZATION_DOMAIN); ?></p>
