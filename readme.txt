@@ -26,13 +26,13 @@ Please see the [Salesforce Social Tutorial / Demo video](http://www.youtube.com/
 
 == Screenshots ==
 
-1. Form with Captcha validation. w2lopform.JPG. 
-2. Web-to-Lead admin screen. w2lform.JPG
-3. REST API admin screen. RestAPI.JPG
+1. Form with Captcha validation.
+2. Web-to-Lead admin screen.
+3. REST API admin screen.
 
 == Changelog ==
 
-= 1.0 =
+= 1.0.1 =
 * Published
 
 == Upgrade Notice ==
