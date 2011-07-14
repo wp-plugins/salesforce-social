@@ -34,6 +34,8 @@ Please see the [Salesforce Social Tutorial / Demo video](http://www.youtube.com/
 
 = 1.0.1 =
 * Published
+= 1.0.2 =
+* No longer requires Buddypress.
 
 == Upgrade Notice ==
 
