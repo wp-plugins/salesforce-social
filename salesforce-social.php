@@ -1,10 +1,10 @@
 <?php
 /*
 Plugin Name: Salesforce Social
-Plugin URI: http://www.cornersoftware.co.uk/salesforce-social
+Plugin URI: http://www.cornersoftware.co.uk/?page_id=93
 Description: Salesforce to Wordpress / Buddypress Integration Suite
 Author: Pete Ryan - Corner Software Ltd
-Version: 1.0.2
+Version: 1.0.3
 Author URI: http://www.cornersoftware.co.uk
 */
 
@@ -54,7 +54,6 @@ if (!class_exists('SFSoc')) {
         const CODE_FAILURE = '200';
         const CODE_ERROR = '300';
 
-//      const MIN_WP_VER = '3.0.4';
         const MIN_WP_VER = '3.0.0';
         const MIN_BP_VER = '1.2.7';
 
@@ -165,6 +164,8 @@ if (!class_exists('SFSoc')) {
         /**
         * Retrieves the plugin options from the database.
         */
+
+
         function getOptions() {
             if (!$theOptions = get_option(SFSoc::OPTIONS_NAME)) {
                 $theOptions = array(
@@ -173,7 +174,14 @@ if (!class_exists('SFSoc')) {
                     'SFSoc_w2l_success'=>__('Thank you for submitting your information.', SFSoc::LOCALIZATION_DOMAIN),
                     'SFSoc_w2l_failure'=>__('There was a problem saving your information. Please contact the site administrator.', SFSoc::LOCALIZATION_DOMAIN),
                     'SFSoc_w2ls'=>'Wordpress/Buddypress',
-                    'SFSoc_w2l_stage'=> SFSoc::WEB_TO_LEAD_STAGE_EMPTY
+                    'SFSoc_w2l_stage'=> SFSoc::WEB_TO_LEAD_STAGE_EMPTY,
+                    'SFSoc_w2l_cbgc'=>'128',
+                    'SFSoc_w2l_cbgcl'=>'120',
+                    'SFSoc_w2l_cbgch'=>'136',
+                    'SFSoc_w2l_ctcl'=>'230',
+                    'SFSoc_w2l_ctch'=>'240',
+                    'SFSoc_w2l_cba'=>'on',
+                    'SFSoc_w2l_carl'=>'on'
                     );
                 update_option(SFSoc::OPTIONS_NAME, $theOptions);
             }
@@ -189,7 +197,6 @@ if (!class_exists('SFSoc')) {
         * Saves the admin options to the database.
         */
         function saveAdminOptions(){
-
             $retVal1 = false;
             $retVal2 = false;
             $retVal3 = false;
@@ -282,6 +289,36 @@ if (!class_exists('SFSoc')) {
                 $this->options['SFSoc_w2l_failure'] = $_POST['SFSoc_w2l_failure'];
                 $this->options['SFSoc_w2ls'] = $_POST['SFSoc_w2ls'];
 
+                // Default captcha colours if not entered
+                $colent = $_POST['SFSoc_w2l_cbgc'];
+                if (empty($colent)) {
+                    $colent = '128';
+                }
+                $this->options['SFSoc_w2l_cbgc'] = $colent;
+
+                $colent = $_POST['SFSoc_w2l_cbgcl'];
+                if (empty($colent)) {
+                    $colent = '128';
+                }
+                $this->options['SFSoc_w2l_cbgcl'] = $colent;
+
+                $colent = $_POST['SFSoc_w2l_cbgch'];
+                if (empty($colent)) {
+                    $colent = '128';
+                }
+                $this->options['SFSoc_w2l_cbgch'] = $colent;
+
+                $colent = $_POST['SFSoc_w2l_ctcl'];
+                if (empty($colent)) {
+                    $colent = '250';
+                }
+                $this->options['SFSoc_w2l_ctcl'] = $colent;
+
+                $colent = $_POST['SFSoc_w2l_ctch'];
+                if (empty($colent)) {
+                    $colent = '255';
+                }
+                $this->options['SFSoc_w2l_ctch'] = $colent;
 
 
                 /** WEB TO LEAD **/
@@ -340,6 +377,16 @@ if (!class_exists('SFSoc')) {
             $chkHttps = '';
             if ($this->options['SFSoc_https']==true) {
                 $chkHttps = 'checked';
+            }
+
+            $chkSFSoc_w2l_cba = '';
+            if ($this->options['SFSoc_w2l_cba']==true) {
+                $chkSFSoc_w2l_cba = 'checked';
+            }
+
+            $chkSFSoc_w2l_carl = '';
+            if ($this->options['SFSoc_w2l_carl']==true) {
+                $chkSFSoc_w2l_carl = 'checked';
             }
 
             // Show these settings defaulted to on / true - should not be settings
@@ -429,7 +476,8 @@ if (!class_exists('SFSoc')) {
                                     <br>
                                     &nbsp;<label for="SFSoc_w2l_captcha"><?php _e('Adding Captcha Validation', SFSoc::LOCALIZATION_DOMAIN); ?></label>&nbsp;<input type="checkbox" id="SFSoc_w2l_captcha" name="SFSoc_w2l_captcha" <?php echo $chkAddCaptcha ?>>
                                     &nbsp;<label for="SFSoc_w2l_css"><?php _e('Adding CSS Styling', SFSoc::LOCALIZATION_DOMAIN); ?></label>&nbsp;<input type="checkbox" id="SFSoc_w2l_css" name="SFSoc_w2l_css" <?php echo $chkAddCSS ?>>
-                                    <br><?php _e('Madatory', SFSoc::LOCALIZATION_DOMAIN); ?>
+
+                                    <br><br><?php _e('Madatory', SFSoc::LOCALIZATION_DOMAIN); ?>
                                     <br><select name="webToLeadMandInputFields[]" multiple="multiple" style="height: 10em;" size="5"><?php echo SFSoc::getOptionsHtml($this->webToLeadInputFields, $this->webToLeadMandInputFields, true); ?></select><br>
                                     <br><?php _e('Select mandatory fields in the above list and click Sanitize to proceed.', SFSoc::LOCALIZATION_DOMAIN); ?>
                                     <br>
@@ -463,6 +511,17 @@ if (!class_exists('SFSoc')) {
                             <th width="33%" scope="row"><?php _e('Lead Source:', SFSoc::LOCALIZATION_DOMAIN); ?></th>
                             <td><input name="SFSoc_w2ls" type="text" id="SFSoc_w2ls" size="45" value="<?php echo $this->options['SFSoc_w2ls'] ;?>"/>
                         </td>
+                        <tr valign="top">
+                            <th width="33%" scope="row"><?php _e('Captcha Appearance:', SFSoc::LOCALIZATION_DOMAIN); ?></th>
+                            <td>
+                                    <?php _e('Background Colour:', SFSoc::LOCALIZATION_DOMAIN); ?>&nbsp;<input name="SFSoc_w2l_cbgc" type="text" id="SFSoc_w2l_cbgc" size="3" value="<?php echo $this->options['SFSoc_w2l_cbgc'] ;?>"/>
+                                    &nbsp;<?php _e('Low Value:', SFSoc::LOCALIZATION_DOMAIN); ?>&nbsp;<input name="SFSoc_w2l_cbgcl" type="text" id="SFSoc_w2l_cbgcl" size="3" value="<?php echo $this->options['SFSoc_w2l_cbgcl'] ;?>"/>
+                                    &nbsp;<?php _e('High Value:', SFSoc::LOCALIZATION_DOMAIN); ?>&nbsp;<input name="SFSoc_w2l_cbgch" type="text" id="SFSoc_w2l_cbgch" size="3" value="<?php echo $this->options['SFSoc_w2l_cbgch'] ;?>"/>
+                                    <br><?php _e('Text Colour Low Value:', SFSoc::LOCALIZATION_DOMAIN); ?>&nbsp;<input name="SFSoc_w2l_ctcl" type="text" id="SFSoc_w2l_ctcl" size="3" value="<?php echo $this->options['SFSoc_w2l_ctcl'] ;?>"/>
+                                    &nbsp;<?php _e('high value:', SFSoc::LOCALIZATION_DOMAIN); ?>&nbsp;<input name="SFSoc_w2l_ctch" type="text" id="SFSoc_w2l_ctch" size="3" value="<?php echo $this->options['SFSoc_w2l_ctch'] ;?>"/>
+                                    <br><label for="SFSoc_w2l_cba"><?php _e('Add Coloured Areas to Background', SFSoc::LOCALIZATION_DOMAIN); ?></label>&nbsp;<input type="checkbox" id="SFSoc_w2l_cba" name="SFSoc_w2l_cba" <?php echo $chkSFSoc_w2l_cba ?>>
+                                    <br><label for="SFSoc_w2l_carl"><?php _e('Add Random Lines', SFSoc::LOCALIZATION_DOMAIN); ?></label>&nbsp;<input type="checkbox" id="SFSoc_w2l_carl" name="SFSoc_w2l_carl" <?php echo $chkSFSoc_w2l_carl ?>>
+                            </td>
                         </tr>
                         <tr>
                             <th colspan=2><input type="submit" name="SFSoc_save" value="Save" /></th>
@@ -1110,10 +1169,21 @@ if (!class_exists('SFSoc')) {
 
             $dat = $encNumero1.$encOperation.$encNumero2;
 
+            // Get captcha appearance details
+            /*
+                    ''=>'230',
+                    'SFSoc_w2l_ctch'=>'240',
+                    'h'=>'',
+                    ''=>''
+
+*/
+            $captchaAppearance = '&bgcol='.$this->options['SFSoc_w2l_cbgc'].'&bglocol='.$this->options['SFSoc_w2l_cbgcl'].'&bghicol='.$this->options['SFSoc_w2l_cbgch'].'&txtlocol='.$this->options['SFSoc_w2l_ctcl'].'&txthicol='.$this->options['SFSoc_w2l_ctch'].'&ba='.$this->options['SFSoc_w2l_cba'].'&rl='.$this->options['SFSoc_w2l_carl'];
+
+
             $hashAns=md5($ans);
             $frmData = get_option(SFSoc::WEB_TO_LEAD_FORM_OPTIONS_NAME);
             $frmData = html_entity_decode($frmData);
-            $frmData = str_ireplace('#sfscapthas#', $this->thispluginurl.'captchas.php?dat='.$dat, $frmData);
+            $frmData = str_ireplace('#sfscapthas#', $this->thispluginurl.'captchas.php?dat='.$dat.$captchaAppearance, $frmData);
             $frmData = str_ireplace('#hashAns#', $hashAns, $frmData);
             return $frmData;
         }
@@ -1221,7 +1291,7 @@ if (!class_exists('SFSoc')) {
             $hashans = $_POST['hashans'];
             $ans = $_POST['ans'];
             if (empty($hashans)) {
-                $retVal = __('The was a problem with the Captcha feature, (no hashans). Please contact the site administrator.', SFSoc::LOCALIZATION_DOMAIN);
+                $retVal = 'OK';
             }
             else if (empty($ans)) {
                 $retVal = __('Please go back and enter an answer to the sum.', SFSoc::LOCALIZATION_DOMAIN);

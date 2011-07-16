@@ -43,25 +43,52 @@
 
 //    $bgc = imagecolorallocate($im, 0, 0, 0);
     // ref http://www.thecaptcha.com/
-    $bgc = imagecolorallocate($im, 255, 0, 255);
+//    $bgc = imagecolorallocate($im, 255, 0, 255);
 
+    $bgcol=$_GET['bgcol']; //128;
+    $bglocol=$_GET['bglocol']; //120;
+    $bghicol=$_GET['bghicol']; //136;
+    $bgc = imagecolorallocate($im, $bgcol, $bgcol, $bgcol);
+
+    /*
     $im_acolour[] = imagecolorallocate($im, 255, mt_rand(230, 240), mt_rand(230, 240));
     $im_acolour[] = imagecolorallocate($im, 255, mt_rand(230, 240), mt_rand(230, 240));
     $im_acolour[] = imagecolorallocate($im, 255, mt_rand(160, 220), mt_rand(160, 220));
     $im_bcolour[] = imagecolorallocate($im, 255-mt_rand(50, 100), mt_rand(0, 50), mt_rand(0, 50));
     $im_bcolour[] = imagecolorallocate($im, 255-mt_rand(50, 100), mt_rand(0, 50), mt_rand(0, 50));
     $im_bcolour[] = imagecolorallocate($im, 255-mt_rand(50, 100), mt_rand(0, 50), mt_rand(0, 50));
-    for ($i = 0; $i <= 10; $i++) {
-	ImageFilledEllipse($im, $i*20+mt_rand(4, 26), mt_rand(0, 39), $i*20-mt_rand(4, 26), mt_rand(0, 39), $im_bcolour[mt_rand(0, 2)]);
+*/
+    $txtlocol=$_GET['txtlocol']; //230;
+    $txthicol=$_GET['txthicol']; //240;
+
+    $im_acolour[] = imagecolorallocate($im, mt_rand($txtlocol, $txthicol), mt_rand($txtlocol, $txthicol), mt_rand($txtlocol, $txthicol));
+    $im_acolour[] = imagecolorallocate($im, mt_rand($txtlocol, $txthicol), mt_rand($txtlocol, $txthicol), mt_rand($txtlocol, $txthicol));
+    $im_acolour[] = imagecolorallocate($im, mt_rand($txtlocol, $txthicol), mt_rand($txtlocol, $txthicol), mt_rand($txtlocol, $txthicol));
+
+    $im_bcolour[] = imagecolorallocate($im, mt_rand($bglocol, $bghicol), mt_rand($bglocol, $bghicol), mt_rand($bglocol, $bghicol));
+    $im_bcolour[] = imagecolorallocate($im, mt_rand($bglocol, $bghicol), mt_rand($bglocol, $bghicol), mt_rand($bglocol, $bghicol));
+    $im_bcolour[] = imagecolorallocate($im, mt_rand($bglocol, $bghicol), mt_rand($bglocol, $bghicol), mt_rand($bglocol, $bghicol));
+
+    // Add coloured areas to background
+    $ba= $_GET['ba'];
+    if (!empty($ba)) {
+        for ($i = 0; $i <= 10; $i++) {
+            ImageFilledEllipse($im, $i*20+mt_rand(4, 26), mt_rand(0, 39), $i*20-mt_rand(4, 26), mt_rand(0, 39), $im_bcolour[mt_rand(0, 2)]);
+        }
+        for ($i = 0; $i <= 10; $i++) {
+            ImageFilledRectangle($im, $i*20+mt_rand(4, 26), mt_rand(0, 39), $i*20-mt_rand(4, 26), mt_rand(0, 39), $im_bcolour[mt_rand(0, 2)]);
+        }
     }
-    for ($i = 0; $i <= 10; $i++) {
-	ImageFilledRectangle($im, $i*20+mt_rand(4, 26), mt_rand(0, 39), $i*20-mt_rand(4, 26), mt_rand(0, 39), $im_bcolour[mt_rand(0, 2)]);
-    }
-    for ($i = 0; $i <= 10; $i++) {
-        imageline($im, $i*20+mt_rand(4, 26), 0, $i*20-mt_rand(4, 26), 39, $im_acolour[mt_rand(0, 2)]);
-    }
-    for ($i = 0; $i <= 10; $i++) {
-        imageline($im, $i*20+mt_rand(4, 26), 39, $i*20-mt_rand(4, 26), 0, $im_acolour[mt_rand(0, 2)]);
+
+    // Add random lines
+    $rl= $_GET['rl'];
+    if (!empty($rl)) {
+        for ($i = 0; $i <= 10; $i++) {
+            imageline($im, $i*20+mt_rand(4, 26), 0, $i*20-mt_rand(4, 26), 39, $im_acolour[mt_rand(0, 2)]);
+        }
+        for ($i = 0; $i <= 10; $i++) {
+            imageline($im, $i*20+mt_rand(4, 26), 39, $i*20-mt_rand(4, 26), 0, $im_acolour[mt_rand(0, 2)]);
+        }
     }
 
 
@@ -79,15 +106,17 @@
         } else {
             $ang = 0;
         }
+//        imagettftext($im, mt_rand(24, 28), $ang, $i*mt_rand(30, 36)+mt_rand(2,4), mt_rand(32, 36), $im_acolour[mt_rand(0, 1)], mt_rand(1, 3).'.ttf', $captcha_word{$i});
         imagettftext($im, mt_rand(24, 28), $ang, $i*mt_rand(30, 36)+mt_rand(2,4), mt_rand(32, 36), $im_acolour[mt_rand(0, 1)], mt_rand(1, 3).'.ttf', $captcha_word{$i});
     }
-
+/*
+    // Extra line
     $line_colour = imagecolorallocate( $im, 100, 100, 200 );
     imagesetthickness ( $im, 1.5 );
     imageline( $im, $x1, $y1, $x2, $y2, $line_colour );
     imageline( $im, $x2, $y2, $x3, $y3, $line_colour );
     imageline( $im, $x3, $y3, $tx, $ty, $line_colour );
-
+*/
     imagepng($im);
 
     header ("Content-type: image/png");

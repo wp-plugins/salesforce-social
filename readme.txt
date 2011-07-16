@@ -36,6 +36,9 @@ Please see the [Salesforce Social Tutorial / Demo video](http://www.youtube.com/
 * Published
 = 1.0.2 =
 * No longer requires Buddypress.
+= 1.0.3 =
+* Removed error message after submission without Captcha - 'The was a problem with the Captcha feature, (no hashans). Please contact the site administrator.'
+* Controls added for Captcha appearance / colours
 
 == Upgrade Notice ==
 
