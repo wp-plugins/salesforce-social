@@ -4,7 +4,7 @@ Donate link: http://cornersoftware.co.uk/
 Tags: Salesforce, CRM, Web-to-lead, REST, API, Integration
 Requires at least: 2.8
 Tested up to: 3.0
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 
 Salesforce Integration Suite. Web-to-Lead Form & REST API
 
