@@ -4,7 +4,7 @@ Plugin Name: Salesforce Social
 Plugin URI: http://www.cornersoftware.co.uk/?page_id=93
 Description: Salesforce to Wordpress / Buddypress Integration Suite
 Author: Pete Ryan - Corner Software Ltd
-Version: 1.0.3
+Version: 1.0.4
 Author URI: http://www.cornersoftware.co.uk
 */
 
