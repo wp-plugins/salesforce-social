@@ -4,7 +4,7 @@ Donate link: http://cornersoftware.co.uk/
 Tags: Salesforce, CRM, Web-to-lead, REST, API, Integration
 Requires at least: 2.8
 Tested up to: 3.0
-Stable tag: 1.0.3
+Stable tag: 1.0.2
 
 Salesforce Integration Suite. Web-to-Lead Form & REST API
 
@@ -39,6 +39,8 @@ Please see the [Salesforce Social Tutorial / Demo video](http://www.youtube.com/
 = 1.0.3 =
 * Removed error message after submission without Captcha - 'The was a problem with the Captcha feature, (no hashans). Please contact the site administrator.'
 * Controls added for Captcha appearance / colours
+= 1.0.4 =
+* Added admin screen validation to force CSS use if mandatory fields selected. (Form validation is reliant on the generated CSS).
 
 == Upgrade Notice ==
 
