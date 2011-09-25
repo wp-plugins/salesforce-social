@@ -4,7 +4,7 @@ Plugin Name: Salesforce Social
 Plugin URI: http://www.cornersoftware.co.uk/?page_id=93
 Description: Salesforce to Wordpress / Buddypress Integration Suite
 Author: Pete Ryan - Corner Software Ltd
-Version: 1.0.4
+Version: 1.0.5
 Author URI: http://www.cornersoftware.co.uk
 */
 
@@ -36,23 +36,12 @@ if ( ! defined( 'WP_PLUGIN_DIR' ) )
 
 if (!class_exists('SFSoc')) {
 
-    require_once "XmlHandler.php";
-    
     class SFSoc {
-
-        const API_NAME = 'Salesforce Social';
-        const API_VERSION = '0.0.1';
-        const API_ROOT  = 'sfs_api';
 
         const OPTIONS_NAME = 'SFSoc_options'; // The options string name for this plugin
         const WEB_TO_LEAD_CAPTCHA_KEY_OPTIONS_NAME = 'SFSoc_w2le'; // The options string name for this plugin
         const WEB_TO_LEAD_FORM_OPTIONS_NAME = 'SFSoc_w2lf'; // The options string name for this plugin
         const LOCALIZATION_DOMAIN = 'SFSoc'; // Domain used for localization
-        const MAX_ROWS = 100; // Domain used for localization
-
-        const CODE_SUCCESS = '100';
-        const CODE_FAILURE = '200';
-        const CODE_ERROR = '300';
 
         const MIN_WP_VER = '3.0.0';
         const MIN_BP_VER = '1.2.7';
@@ -76,26 +65,6 @@ if (!class_exists('SFSoc')) {
         * @var array $options Stores the options for this plugin
         */
         var $options = array();
-
-        /**
-        * @var string $transaction Stores the validated/authorised current api action/request
-        */
-        var $transaction = '';
-
-        /**
-        * @var string $statusCode Stores a string/numeric code to indicate transaction processing status 100|200|300 = success|failure|error
-        */
-        var $statusCode = '';
-
-        /**
-        * @var string $statusDescription Stores a string related to the $statusCode numeric code to indicate transaction processing status 100|200|300 = success|failure|error
-        */
-        var $statusDescription = '';
-
-        /**
-        * @var string $statusMessage Stores a status message to be returned to the caller
-        */
-        var $statusMessage = '';
 
         /**
         * @var string $dataIn Stores the request
@@ -141,11 +110,6 @@ if (!class_exists('SFSoc')) {
             //Widget Registration Actions
             add_action('plugins_loaded', array(&$this,'register_widgets'));
 
-            /*
-            add_action("wp_head", array(&$this,"add_css"));
-            add_action('wp_print_scripts', array(&$this, 'add_js'));
-            */
-
             //Filters
             /*
             add_filter('the_content', array(&$this, 'filter_content'), 0);
@@ -155,7 +119,6 @@ if (!class_exists('SFSoc')) {
              * API Interceptor
              */
             // Ensure that the request is parsed before any WP front-end stuff, but after the core of WP is loaded
-            add_action('wp', array(&$this, 'sfs_api_listener'), 1);
 
             add_shortcode('webtolead', array(&$this, 'webToLead'));
 
@@ -169,8 +132,6 @@ if (!class_exists('SFSoc')) {
         function getOptions() {
             if (!$theOptions = get_option(SFSoc::OPTIONS_NAME)) {
                 $theOptions = array(
-                    'SFSoc_whitelist'=>'204.14.232.0/25,204.14.233.0/25,204.14.234.0/25,204.14.235.0/25',
-                    'SFSoc_https'=>true,
                     'SFSoc_w2l_success'=>__('Thank you for submitting your information.', SFSoc::LOCALIZATION_DOMAIN),
                     'SFSoc_w2l_failure'=>__('There was a problem saving your information. Please contact the site administrator.', SFSoc::LOCALIZATION_DOMAIN),
                     'SFSoc_w2ls'=>'Wordpress/Buddypress',
@@ -248,15 +209,6 @@ if (!class_exists('SFSoc')) {
 
                 if (! wp_verify_nonce($_POST['_wpnonce'], 'SFSoc-update-options') ) die(__('There was a problem with the data you posted. Please go back and try again.', SFSoc::LOCALIZATION_DOMAIN));
 
-                $pwdindb = $this->options['SFSoc_password'];
-                $pwdentered = $_POST['SFSoc_password'];
-                $pwdventered = $_POST['SFSoc_vpassword'];
-                $newpassword = $pwdentered;
-
-                $whitel = $_POST['SFSoc_whitelist'];
-                if (empty($whitel)) {
-                    $whitel = '204.14.232.0/25,204.14.233.0/25,204.14.234.0/25,204.14.235.0/25';
-                }
 
                 // If mandatory fields have been selected then CSS is required.
                 $this->webToLeadMandInputFields = $_POST['webToLeadMandInputFields'];
@@ -264,32 +216,6 @@ if (!class_exists('SFSoc')) {
                     die(__('CSS must be selected for validation to work. Please go back and try again. (Edit the default CSS included by the sanitization process to meet your needs.)', SFSoc::LOCALIZATION_DOMAIN));
                 }
 
-
-
-                // If the api is enabled then validate password etc
-                $this->options['SFSoc_enable_api'] = ($_POST['SFSoc_enable_api']=='on')?true:false;
-                if ($this->options['SFSoc_enable_api']==true) {
-                    if (empty($pwdentered)) {
-                        die(__('Password must be entered and be more than 8 charcters long. Please go back and try again.', SFSoc::LOCALIZATION_DOMAIN));
-                    }
-                    if (strlen(trim($pwdentered))<9) {
-                        die(__('Password must be entered and be more than 8 charcters long. Please go back and try again.', SFSoc::LOCALIZATION_DOMAIN));
-                    }
-                    if (empty($pwdventered)) {
-                        die(__('Password must be verified / entered twice. Please go back and try again.', SFSoc::LOCALIZATION_DOMAIN));
-                    }
-                    if ($pwdentered != $pwdventered) {
-                        die(__('Password must be verified / entered the same twice. Please go back and try again.', SFSoc::LOCALIZATION_DOMAIN));
-                    }
-                    if (empty($pwdindb) || ($pwdentered <> $pwdindb)) {
-                        $newpassword = wp_hash_password(trim($pwdentered));
-                    }
-                }
-                $this->options['SFSoc_user'] = $_POST['SFSoc_user'];
-                $this->options['SFSoc_password'] = $newpassword;
-                $this->options['SFSoc_bp_xprofiles'] = ($_POST['SFSoc_bp_xprofiles']=='on')?true:false;
-                $this->options['SFSoc_https'] = ($_POST['SFSoc_https']=='on')?true:false;
-                $this->options['SFSoc_whitelist'] = $whitel;
 
                 $this->options['SFSoc_w2l_captcha'] = ($_POST['SFSoc_w2l_captcha']=='on')?true:false;
                 $this->options['SFSoc_w2l_css'] = ($_POST['SFSoc_w2l_css']=='on')?true:false;
@@ -375,18 +301,6 @@ if (!class_exists('SFSoc')) {
             $chkEnableApi = '';
             if ($this->options['SFSoc_enable_api']==true) {
                 $chkEnableApi = 'checked';
-            }
-
-            // check box
-            $chkBPXProfileAdmin = '';
-            if ($this->options['SFSoc_bp_xprofiles']==true) {
-                $chkBPXProfileAdmin = 'checked';
-            }
-
-            // check box
-            $chkHttps = '';
-            if ($this->options['SFSoc_https']==true) {
-                $chkHttps = 'checked';
             }
 
             // check box
@@ -540,50 +454,10 @@ if (!class_exists('SFSoc')) {
                             <th colspan=2><input type="submit" name="SFSoc_save" value="Save" /></th>
                         </tr>
                 </table>
-                <h4>Wordpress / Buddypress REST API</h4>
-                    <table width="100%" cellspacing="2" cellpadding="5" class="form-table">
-                        <tr valign="top">
-                            <th><label for="SFSoc_enable_api"><?php _e('Enable:', SFSoc::LOCALIZATION_DOMAIN); ?></label></th>
-                            <td><input type="checkbox" id="SFSoc_enable_api" name="SFSoc_enable_api" <?php echo $chkEnableApi ?>></td>
-                        </tr>
-                        <tr valign="top">
-                            <th width="33%" scope="row"><?php _e('User Name:', SFSoc::LOCALIZATION_DOMAIN); ?></th>
-                            <td><input name="SFSoc_user" type="text" id="SFSoc_user" size="45" value="<?php echo $this->options['SFSoc_user'] ;?>"/>
-                        </td>
-                        </tr>
-                        <tr valign="top">
-                            <th width="33%" scope="row"><?php _e('Password:', SFSoc::LOCALIZATION_DOMAIN); ?></th>
-                            <td><input name="SFSoc_password" type="password" id="SFSoc_password" value="<?php echo $this->options['SFSoc_password'] ;?>"/>
-                            </td>
-                        </tr>
-                        <tr valign="top">
-                            <th width="33%" scope="row"><?php _e('Verify Password:', SFSoc::LOCALIZATION_DOMAIN); ?></th>
-                            <td><input name="SFSoc_vpassword" type="password" id="SFSoc_vpassword" value="<?php echo $this->options['SFSoc_password'] ;?>"/>
-                            </td>
-                        </tr>
-                        <tr valign="top">
-                            <th><label for="SFSoc_bp_xprofiles"><?php _e('Read Buddypress Extended User Profiles:', SFSoc::LOCALIZATION_DOMAIN); ?></label></th>
-                            <td><input type="checkbox" id="SFSoc_bp_xprofiles" name="SFSoc_bp_xprofiles" <?php echo $chkBPXProfileAdmin ?>></td>
-                        </tr>
-                        <tr valign="top">
-                            <th><label for="SFSoc_https"><?php _e('HTTPS Only:', SFSoc::LOCALIZATION_DOMAIN); ?></label></th>
-                            <td><input type="checkbox" id="SFSoc_https" name="SFSoc_https" <?php echo $chkHttps ?>></td>
-                        </tr>
-                        <tr valign="top">
-                            <th width="33%" scope="row"><?php _e('Whitelist (IPs/CIDRs):', SFSoc::LOCALIZATION_DOMAIN); ?></th>
-                            <td><input name="SFSoc_whitelist" type="text" id="SFSoc_whitelist" size="75" value="<?php echo $this->options['SFSoc_whitelist'] ;?>"/>
-                                <br><?php _e('(Comma separated e.g. 204.14.232.0/25,204.14.231.127,204.14.231.111)', SFSoc::LOCALIZATION_DOMAIN); ?>
-                            </td>
-                        </tr>
-                        <tr valign="top">
-                            <th width="33%" scope="row"><?php _e('REST API Usage:', SFSoc::LOCALIZATION_DOMAIN); ?></th>
-                            <td><?php _e('transaction=getusers|getuserbyid|updateuser|deleteuser', SFSoc::LOCALIZATION_DOMAIN); ?></br>
-                                http://[Wordpress/Buddyppress URL]/sfs_api?transaction=mytransaction&ID=0&user=myusername&password=mypassword
-                            </td>
-                        </tr>
-                        <tr>
-                            <th colspan=2><input type="submit" name="SFSoc_save" value="Save" /></th>
-                        </tr>
+                <h4>Wordpress / Buddypress REST API. (Contact www.cornersoftware.co.uk)</h4>
+                    <p><?php _e('This feature allows the integration of Salesforce.com/Force.com with Wordpress/Multisite/Buddypress.', SFSoc::LOCALIZATION_DOMAIN); ?>
+                    <p><?php _e('It is no longer part of this plugin but is available separately.', SFSoc::LOCALIZATION_DOMAIN); ?>
+                    <p><?php _e('For more information visit www.cornersoftware.co.uk', SFSoc::LOCALIZATION_DOMAIN); ?>
                     </table>
                 </form>
                 </div>
@@ -634,535 +508,6 @@ if (!class_exists('SFSoc')) {
             }
         }
 
-
-        /*
-         * @desc API PROCESSING MAIN FUNCTION
-         */
-        function sfs_api_listener() {
-
-            global $wp;
-            // Note : Only works with numeric permalinks for gets else page not found error
-            if ( $req = $wp->request ) {
-
-                $ra = explode( '/', $req );
-
-                // Intercept and process api requests then die
-                if ( strtolower($ra[0]) == SFSoc::API_ROOT) {
-
-                    try {
-
-                        $this->resetMemberVars();
-
-                        $request_method = strtolower($_SERVER['REQUEST_METHOD']);
-                        $action = '';
-                        if (!empty($request_method)) {
-                            switch ($request_method) {
-                                case 'get' :
-                                    $this->dataIn = $_GET;
-                                    break;
-                                case 'post' :
-                                    $this->dataIn = $_POST;
-                                    break;
-                            }
-                            $action = strtolower($this->dataIn['transaction']);
-                        }
-
-                        if ($this->transpOk() &&
-                                $this->sourceOk() &&
-                                $this->userPassOk($this->dataIn['user'], $this->dataIn['password'])
-                                && $this->actionOk($action)) {
-
-                            // Remove the password - to prevent it being sent back with the response
-                            $this->dataIn['password'] = '';
-
-                            $id = $this->dataIn['ID'];
-
-                            switch ($this->transaction) {
-                                case 'getusers' :
-                                    $this->getUsers($id);
-                                    break;
-                                case 'getuserbyid' :
-                                    if (empty($id)) {
-                                        $this->sendInvalidCall('ID must be supplied.');
-                                    } else {
-                                        $this->getUserByID($id);
-                                    }
-                                    break;
-                                case 'updateuser' :
-                                    if (empty($id)) {
-                                        $this->sendInvalidCall('ID must be supplied.');
-                                    } else {
-                                        $this->updateUser($this->dataIn);
-                                    }
-                                    break;
-                                case 'deleteuser' :
-                                    if (empty($id)) {
-                                        $this->sendInvalidCall('ID must be supplied.');
-                                    } else {
-                                        $this->deleteUser($this->dataIn);
-                                    }
-                                    break;
-                                default:
-
-                                    $this->sendInvalidCall(' Unknown transaction requested. ['.implode('|', $this->dataIn).']');
-                            }
-
-                        } else {
-                            $this->sendAccessDenied(' Full request. ['.implode('|', $this->dataIn).']');
-                        }
-
-                    }
-                    catch (Exception $e) {
-                        $this->sendError('Problem in sfs_api_listener with data ['.implode('|', $this->dataIn).']', $e);
-                    }
-
-                    // End API processing
-                    die();
-                }
-            }
-        }
-
-
-        /*
-         * General helper functions
-         */
-        function resetMemberVars() {
-            $this->transaction = '';
-            $this->statusCode = '';
-            $this->statusDescription = '';
-            $this->statusMessage = '';
-            $this->dataIn = '';
-        }
-
-        /*
-         * XML message helper functions
-         */
-
-        /*
-         * @desc sends an array as xml to the caller
-         */
-        function sendRecordSet($recordSetArr, $pluralTag, $singularTag) {
-            $this->statusCode = SFSoc::CODE_SUCCESS;
-            $this->statusDescription = 'success';
-            $this->statusMessage = 'All Ok';
-
-            try {
-
-                echo XmlHandler::buildDbXml(SFSoc::API_NAME,
-                        SFSoc::API_VERSION,
-                        $this->transaction,
-                        $this->statusCode,
-                        $this->statusDescription,
-                        $this->statusMessage,
-                        $recordSetArr, $pluralTag, $singularTag);
-            }
-            catch (Exception $e) {
-                $this->sendError('Problem in sendRecordSet. ['.implode('|', $this->dataIn).']', $e);
-            }
-
-        }
-
-
-        /*
-         * @desc sends an xml message to indicate an invalid call
-         */
-        function sendInvalidCall($details) {
-            $this->statusCode = SFSoc::CODE_FAILURE;
-            $this->statusDescription = 'failure';
-            if (empty($details)) {
-                $this->statusMessage = 'Invalid call';
-            } else {
-                $this->statusMessage = 'Invalid call : '.$details;
-            }
-
-            echo XmlHandler::buildStatusXml(SFSoc::API_NAME,
-                    SFSoc::API_VERSION,
-                    $this->transaction,
-                    $this->statusCode,
-                    $this->statusDescription,
-                    $this->statusMessage, null);
-        }
-
-
-        /*
-         * @desc sends an xml message to indicate the succesful processing of a transaction
-         */
-        function sendSuccess($details, $contentXml) {
-            $this->statusCode = SFSoc::CODE_SUCCESS;
-            $this->statusDescription = 'success';
-            if (empty($details)) {
-                $this->statusMessage = 'success';
-            } else {
-                $this->statusMessage = $details;
-            }
-
-            echo XmlHandler::buildStatusXml(SFSoc::API_NAME,
-                    SFSoc::API_VERSION,
-                    $this->transaction,
-                    $this->statusCode,
-                    $this->statusDescription,
-                    $this->statusMessage, $contentXml);
-        }
-
-        /*
-         * @desc sends an xml message to indicate access denied
-         */
-        function sendAccessDenied($details) {
-            $this->statusCode = SFSoc::CODE_FAILURE;
-            $this->statusDescription = 'failure';
-            if (empty($details)) {
-                $this->statusMessage = 'Access Denied';
-            } else {
-                $this->statusMessage = 'Acess Denied / Restricted or unkonwn transaction: '.$details;
-            }
-            echo XmlHandler::buildStatusXml(SFSoc::API_NAME,
-                    SFSoc::API_VERSION,
-                    $this->transaction,
-                    $this->statusCode,
-                    $this->statusDescription,
-                    $this->statusMessage, null);
-        }
-
-        /*
-         * @desc sends an xml message to indicate and detail a system error
-         */
-        function sendError($details, $excep) {
-            $this->statusCode = SFSoc::CODE_ERROR;
-            $this->statusDescription = 'error';
-            if (empty($details)) {
-                $this->statusMessage = 'Error during call with '.$details.' : '.$excep->getMessage();
-            } else {
-                $this->statusMessage = $excep->__toString();
-            }
-
-            echo XmlHandler::buildStatusXml(SFSoc::API_NAME,
-                    SFSoc::API_VERSION,
-                    $this->transaction,
-                    $this->statusCode,
-                    $this->statusDescription,
-                    $this->statusMessage, null);
-        }
-
-        /*
-         * Authentication helper functions
-         */
-
-        /*
-         * @desc validates requested actions / transactions
-         */
-        function actionOk($act) {
-            $retVal = false;
-
-            if ($this->options['SFSoc_enable_api']) {
-                if ($act == 'getuserbyid') {
-                    $retVal = true;
-                } else if ($act == 'updateuser') {
-                    $retVal = true;
-                } else if ($act == 'deleteuser') {
-                    $retVal = true;
-                } else if ($act == 'getusers') {
-                    $retVal = true;
-                }
-            }
-
-            if ($retVal) {
-                $this->transaction = $act;
-            } else {
-                $this->transaction = '';
-            }
-
-            return $retVal;
-        }
-
-        /*
-         * @desc validates transprot method
-         */
-        function transpOk() {
-            $remote_https = $_SERVER ['HTTPS'];
-            if ($this->options['SFSoc_https']==true) {
-                if (empty($remote_https)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        /*
-         * @desc validates the callling IP address to be in a white list from the options
-         */
-        function sourceOk() {
-
-            try {
-
-            $wl = trim($this->options['SFSoc_whitelist']) . ",";
-            //if the white list is not already terminated with "," then add 1
-            $remote_name = $_SERVER ['REMOTE_HOST'];
-            $remote_addr = $_SERVER ['REMOTE_ADDR'];
-            //$remote_addr = '204.14.232.2'; // testing
-            if (!empty($wl)) {
-                $wlarr = explode(',', $wl, -1);
-                for($i = 0; $i < count($wlarr); $i++){
-
-                    // If IP address
-                    if ($remote_addr == $wlarr[$i]) {
-                        return true;
-                        break;
-                    } else {
-
-                        // If CIDR
-                        $netstr = strstr($wlarr[$i], '/', true);
-                        $subnetstr = strstr($wlarr[$i], '/');
-                        if (!empty($netstr) && !empty($subnetstr)) {
-
-                            if(SFSoc::cidr_match($remote_addr,$wlarr[$i])) {
-                                return true;
-                                break;
-                            }
-
-                        }
-
-                    }
-
-                }
-                return false;
-            }
-
-            return true;
-            }
-            catch (Exception $e) {
-                $this->sendError('Problem in sourceOk. ['.implode('|', $this->dataIn).']', $e);
-            }
-
-        }
-
-        /*
-         * @desc validates user name and password
-         */
-        function userPassOk($usr, $pw) {
-            try {
-                $retVal = false;
-                if (!empty($usr) && !empty($pw)) {
-                    if ($usr == trim($this->options['SFSoc_user'])) {
-                        if(wp_check_password($pw, $this->options['SFSoc_password'])) {
-                            $retVal = true;
-                        }
-                    }
-                }
-                return $retVal;
-            }
-            catch (Exception $e) {
-                $this->sendError('Problem in userPassOk. ['.implode('|', $this->dataIn).']', $e);
-            }
-        }
-
-        /*
-         * @desc validates source IP against a CIDR format IP address range
-         */
-        static function cidr_match($ipStr, $cidrStr) {
-          $ip = ip2long($ipStr);
-          $cidrArr = split('/',$cidrStr);
-          $maskIP = ip2long($cidrArr[0]);
-          $maskBits = 32 - $cidrArr[1];
-          return (($ip>>$maskBits) == ($maskIP>>$maskBits));
-        }
-
-        /*
-         * USER ADMIN
-         */
-
-        function getBpXprofSql() {
-
-                    global $bp;
-
-                    $xProSql=array();
-                    $xProSql[]="SELECT grp.id as group_id, grp.`name` as group_name, ";
-                    $xProSql[]="fld.id as field_id, fld.`type` as field_type, fld.`name` as field_name, ";
-                    $xProSql[]="dat.id as data_id, dat.`value` as data_value, dat.last_updated as data_last_updated ";
-                    $xProSql[]="FROM ".$bp->profile->table_name_groups." grp ";
-                    $xProSql[]="INNER JOIN ".$bp->profile->table_name_fields." fld ON grp.id = fld.group_id ";
-                    $xProSql[]="INNER JOIN ".$bp->profile->table_name_data." dat ON fld.id = dat.field_id ";
-                    $xProSql[]="WHERE dat.user_id = ";
-
-                    return implode('',$xProSql);
-
-        }
-
-        function getUserXProfXml($usr) {
-
-            global $wpdb;
-
-            $res=array();
-            $res[]="<user>\n";
-
-            foreach($usr as $key2 => $usrField) {
-                $res[]="\t<$key2>$usrField</$key2>\n";
-            }
-
-            $res[]="\t<xprofile>\n";
-            $xprof = $wpdb->get_results($this->getBpXprofSql().$usr[ID], ARRAY_A);
-            foreach($xprof as $key3 => $xproPart) {
-                $res[]="\t\t<xprofile_field>\n";
-                foreach($xproPart as $key4 => $xproField) {
-                    $res[]="\t\t\t<$key4>$xproField</$key4>\n";
-                }
-                $res[]="\t\t</xprofile_field>\n";
-            }
-            $res[]="\t</xprofile>\n";
-            $res[]="</user>\n";
-
-            return implode('',$res);
-        }
-
-        /*
-         * @desc returns a user list for IDs > than the ID (if) provided except for the primary admin user
-         */
-	function getUsers($continueFromId) {
-            try {
-
-                global $wpdb;
-                $users = null;
-
-                if (empty($continueFromId)) {
-                    $users = $wpdb->get_results("SELECT * FROM ".$wpdb->users." WHERE ID > 0 ORDER BY ID LIMIT ".SFSoc::MAX_ROWS, ARRAY_A);
-                } else {
-                    $users = $wpdb->get_results("SELECT * FROM ".$wpdb->users." WHERE ID > ".$continueFromId." ORDER BY ID LIMIT ".SFSoc::MAX_ROWS, ARRAY_A);
-                }
-
-                if (!$this->options['SFSoc_bp_xprofiles']) {
-                    $this->sendRecordSet($users, 'users', 'user');
-                } else {
-
-                    $resArr=array();
-                    $resArr[]='<users>';
-                    foreach ($users as $key1 => $usr) {
-                        $resArr[]=$this->getUserXProfXml($usr);
-                    }
-                    $resArr[]='</users>';
-
-                    $this->sendSuccess('users inc. bp extended profile data. ['.implode('|', $this->dataIn).'] : '.$msg, implode('',$resArr));
-
-                }
-
-            }
-            catch (Exception $e) {
-                $this->sendError('Problem in getUsers. ['.implode('|', $this->dataIn).']', $e);
-            }
-
-	}
-
-        /*
-         * @desc returns user details
-         */
-	function getUserByID($ID) {
-            try {
-                global $wpdb;
-                $users = $wpdb->get_results("SELECT * FROM ".$wpdb->users." WHERE ID = ".$ID, ARRAY_A);
-                if (!$this->options['SFSoc_bp_xprofiles']) {
-                    $this->sendRecordSet($users, 'users', 'user');
-                } else {
-                    $resArr=array();
-                    $resArr[]='<users>';
-                    foreach ($users as $key1 => $usr) {
-                        $resArr[]=$this->getUserXProfXml($usr);
-                    }
-                    $resArr[]='</users>';
-                    $this->sendSuccess('user inc. bp extended profile data. ['.implode('|', $this->dataIn).'] : '.$msg, implode('',$resArr));
-                }
-
-            }
-            catch (Exception $e) {
-                $this->sendError('Problem in getUserById. ['.implode('|', $this->dataIn).']', $e);
-            }
-	}
-
-        /*
-         * @desc insert or update a user
-         */
-	function updateUser($userdata) {
-
-            try {
-
-                require_once(ABSPATH . '/wp-includes/registration.php');
-
-                // Attempt update / insert
-                $user_id = wp_insert_user($userdata);
-
-                // Respond with the updated data or error details
-                if (is_object($user_id)) {
-                    $this->sendInvalidCall($user_id->get_error_message());
-                } else {
-                    $this->getUserByID($user_id);
-                }
-            }
-            catch (Exception $e) {
-                $this->sendError('Problem in updateUser. ['.implode('|', $this->dataIn).']', $e);
-            }
-
-        }
-
-        /*
-         * @desc delete a user
-         */
-        function deleteUser($params) {
-            // http://localhost/wp2/sfs_api?user=Pete&password=123456789&transaction=deleteUser&ID=16
-
-            global $wpdb;
-
-            try
-            {
-                $retVal = false;
-                $msg = '';
-
-                require_once(ABSPATH . '/wp-admin/includes/user.php');
-                extract($params, EXTR_SKIP);
-                if ( !empty($ID) ) {
-                        $ID = (int) $ID;
-                        $users = $wpdb->get_results("SELECT ID FROM ".$wpdb->users." WHERE ID = ".$ID);
-                        if(count($users) == 1) {
-                            if ( !empty($reassign_user) ) {
-                                $reassign_user = (int) $reassign_user;
-                                $users = $wpdb->get_results("SELECT ID FROM ".$wpdb->users." WHERE ID = ".$reassign_user);
-                                if(count($users) == 1) {
-                                    $msg = _e('Delete user with ID: ', SFSoc::LOCALIZATION_DOMAIN).$ID._e(' reasigning content to user with ID ', SFSoc::LOCALIZATION_DOMAIN).$reassign_user;
-                                    if (defined('BP_VERSION')) {
-                                        xprofile_remove_data( $ID );
-                                    }
-                                    wp_delete_user($ID, $reassign_user);
-                                    $retVal = true;
-                                }
-                                else {
-                                    $msg = _e('No user with ID/reassign_user: ', SFSoc::LOCALIZATION_DOMAIN).$reassign_user._e(' to reassign to for user with ID: ', SFSoc::LOCALIZATION_DOMAIN).$ID._e('! (Nothing deleted).', SFSoc::LOCALIZATION_DOMAIN);
-                                }
-
-                            } else {
-                                $msg = _e('Deleted user with ID: ', SFSoc::LOCALIZATION_DOMAIN).$ID;
-                                if (defined('BP_VERSION')) {
-                                    xprofile_remove_data( $ID );
-                                }
-                                wp_delete_user($ID);
-                                $retVal = true;
-                            }
-                        }
-                        else {
-                            $msg = _e('No user with ID: ', SFSoc::LOCALIZATION_DOMAIN).$ID._e(' to delete!', SFSoc::LOCALIZATION_DOMAIN);
-                        }
-
-                } else {
-                    $msg = _e('ID must be supplied!', SFSoc::LOCALIZATION_DOMAIN);
-                }
-
-                if (retVal) {
-                    $this->sendSuccess('Ok. ['.implode('|', $this->dataIn).'] : '.$msg, null);
-                }
-                else {
-                    $this->sendInvalidCall('Problem. ['.implode('|', $this->dataIn).'] : '.$msg);
-                }
-            }
-            catch (Exception $e) {
-                $this->sendError('Problem in deleteUser. ['.implode('|', $this->dataIn).']', $e);
-            }
-
-        }
 
         function getWebToLeadForm() {
 
