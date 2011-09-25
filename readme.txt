@@ -4,7 +4,7 @@ Donate link: http://cornersoftware.co.uk/
 Tags: Salesforce, CRM, Web-to-lead, REST, API, Integration
 Requires at least: 2.8
 Tested up to: 3.0
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 
 Salesforce Integration Suite. Web-to-Lead Form & REST API
 
@@ -13,7 +13,7 @@ Salesforce Integration Suite. Web-to-Lead Form & REST API
 Generate a raw HTML form using your Salesforce CRM account and paste it into the Admin Panel of this plugin. Styling, form validation and anti-spam captcha can be added. The form can be included anywhere in your Wordpress/Buddypress site by using the short code [webtolead]. The form is fully customisable and even deals with with custom fields in the Salesforce Lead object.
 
 2. REST API to allow complex integrations with Wordpress/Buddypress.
-Allows user admin from an external application.
+Allows user admin from an external application. No longer available in this plugin.
 
 Please see the [Salesforce Social Tutorial / Demo video](http://www.youtube.com/watch?v=k4y2XzNYEAQ).
 
@@ -41,6 +41,8 @@ Please see the [Salesforce Social Tutorial / Demo video](http://www.youtube.com/
 * Controls added for Captcha appearance / colours
 = 1.0.4 =
 * Added admin screen validation to force CSS use if mandatory fields selected. (Form validation is reliant on the generated CSS).
+= 1.0.5 =
+* Removed the REST api for redevelopment catering for multisite.
 
 == Upgrade Notice ==
 
